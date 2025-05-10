@@ -2,3 +2,16 @@
     margin: 0;
     padding: 0;
  }
+ .wx-progress-marker {
+   display: none !important;
+ }
+ 
+ .wx-gantt .wx-bar.wx-task.completed {
+   background-color: green;
+   --wx-gantt-task-fill-color: green !important;
+ }
+ 
+ .wx-gantt .wx-bar.wx-task.exceeded {
+   background-color: red;
+   --wx-gantt-task-fill-color: red !important;
+ }

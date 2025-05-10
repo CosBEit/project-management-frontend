@@ -10,7 +10,7 @@ import Grid from '@mui/material/Grid';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Gantt, Willow } from "wx-react-gantt";
 import "wx-react-gantt/dist/gantt.css";
-import { Switch, FormControlLabel, Toolbar, Slider, Box, Dialog, DialogActions, DialogContent, DialogTitle, TextField, IconButton, Autocomplete, CircularProgress } from '@mui/material';
+import { Switch, FormControlLabel, Toolbar, Slider, Box, Dialog, DialogActions, DialogContent, DialogTitle, TextField, IconButton, Autocomplete, CircularProgress, Select, MenuItem } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import EditIcon from '@mui/icons-material/Edit';
@@ -139,6 +139,7 @@ const ProjectDetails = ({ handleLogout }) => {
     const [assignee, setAssignee] = useState({ id: '', email: '' });
     const [isSaving, setIsSaving] = useState(false);
     const [classification, setClassification] = useState('');
+    const [priority, setPriority] = useState('');
     const [tasks, setTasks] = useState([]);
     const [links, setLinks] = useState([]);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -149,12 +150,6 @@ const ProjectDetails = ({ handleLogout }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [saveDisabled, setSaveDisabled] = useState(true);
 
-    // Add debug logging
-    useEffect(() => {
-        console.log('ProjectDetails mounted');
-        console.log('Project ID:', projectId);
-        console.log('Location:', location.href);
-    }, []);
 
     useEffect(() => {
         if (!projectId) {
@@ -194,87 +189,8 @@ const ProjectDetails = ({ handleLogout }) => {
         };
 
         fetchData();
-    }, [projectId, navigate]);
-
-    // Initialize Gantt API
-    useEffect(() => {
-        console.log('Initializing Gantt API');
-        const initializeGanttAPI = () => {
-            if (!apiRef?.current) {
-                console.warn('Gantt API reference not initialized yet');
-                return;
-            }
-
-            try {
-                console.log('Setting up Gantt API interceptors and event handlers');
-                // Intercept show-editor
-                apiRef.current.intercept("show-editor", () => {
-                    return false;
-                });
-
-                // Intercept move-task
-                apiRef.current.intercept("move-task", () => {
-                    console.log("Intercepting move-task");
-                    return false;
-                });
-
-                // Intercept update-task
-                apiRef.current.intercept("update-task", (data) => {
-                    console.log("Intercepting update-task", data);
-                    setSaveDisabled(false);
-                    const adjustedTask = JSON.parse(JSON.stringify(data.task));
-                    if (data.diff) {
-                        if (adjustedTask.start) {
-                            adjustedTask.start = new Date(new Date(adjustedTask.start).setDate(new Date(adjustedTask.start).getDate() + data.diff));
-                        }
-                        if (adjustedTask.end) {
-                            adjustedTask.end = new Date(new Date(adjustedTask.end).setDate(new Date(adjustedTask.end).getDate() + data.diff));
-                        }
-                    }
-                    setSelectedTask({ "id": data.id, ...adjustedTask });
-                });
-
-                // Add link event handler
-                apiRef.current.on("add-link", (ev) => {
-                    console.log("add-link", ev);
-                    setSaveDisabled(false);
-                    if (ev.target && ev.source) {
-                        setLinks(prev => [...prev, { target: ev.target, source: ev.source, type: ev.type }]);
-                    }
-                });
-
-                // Select task event handler
-                apiRef.current.on("select-task", (ev) => {
-                    console.log("select-task", ev);
-                    const task = tasks.find(t => t.id === ev.id);
-                    setSelectedTask(task);
-                });
-
-                console.log("Gantt API successfully initialized");
-            } catch (error) {
-                console.error("Error initializing Gantt API:", error);
-            }
-        };
-
-        // Initialize API when both apiRef and tasks are available
-        if (apiRef?.current && tasks?.length > 0) {
-            initializeGanttAPI();
-        }
-    }, [apiRef.current, tasks]);
-
-    // Add a separate effect to handle API ref initialization
-    useEffect(() => {
-        console.log('Checking API ref initialization');
-        const checkApiRef = () => {
-            if (!apiRef?.current) {
-                console.warn('Waiting for Gantt API reference to initialize...');
-                setTimeout(checkApiRef, 100); // Check again after 100ms
-            } else {
-                console.log('Gantt API reference initialized');
-            }
-        };
-        checkApiRef();
     }, []);
+
 
     const columns = [
         {
@@ -411,6 +327,63 @@ const ProjectDetails = ({ handleLogout }) => {
         setShowGrid(event.target.checked);
     };
 
+    useEffect(() => {
+        if (apiRef?.current) {
+            // Prevent editor from showing on double click
+            apiRef.current.intercept("show-editor", () => {
+                return false;
+            });
+
+            // Prevent task movement
+            apiRef.current.intercept("move-task", () => {
+                return false;
+            });
+
+            // Handle task updates
+            apiRef.current.intercept("update-task", (data) => {
+                console.log("update-task", data);
+                setSaveDisabled(false);
+                const adjustedTask = JSON.parse(JSON.stringify(data.task));
+                if (data.diff) {
+                    if (adjustedTask.start) {
+                        adjustedTask.start = new Date(new Date(adjustedTask.start).setDate(new Date(adjustedTask.start).getDate() + data.diff));
+                    }
+                    if (adjustedTask.end) {
+                        adjustedTask.end = new Date(new Date(adjustedTask.end).setDate(new Date(adjustedTask.end).getDate() + data.diff));
+                    }
+                }
+                setDraggingTask({ "id": data.id, ...adjustedTask });
+            });
+
+            // Handle link creation
+            apiRef.current.on("add-link", (ev) => {
+                console.log("add-link", ev);
+                setSaveDisabled(false);
+                if (ev.target && ev.source) {
+                    setLinks(prev => [...prev, { target: ev.target, source: ev.source, type: ev.type }]);
+                }
+            });
+
+            // Handle task deletion
+            apiRef.current.on("delete-task", (ev) => {
+                console.log("delete-task", ev);
+                if (ev.id) {
+                    handleDeleteTask(ev.id);
+                }
+            });
+
+            // Handle task editing
+            apiRef.current.on("edit-task", (ev) => {
+                console.log("edit-task", ev);
+                const task = tasks.find(t => t.id === ev.id);
+                if (task) {
+                    setSelectedTask(task);
+                    handleEditOpen();
+                }
+            });
+        }
+    }, [apiRef.current, tasks]);
+
     const handleClickOpen = () => {
         setOpen(true);
     };
@@ -422,6 +395,7 @@ const ProjectDetails = ({ handleLogout }) => {
         setStartDate('');
         setEndDate('');
         setClassification('');
+        setPriority('');
         setTextError(false);
         setStartDateError(false);
         setEndDateError(false);
@@ -447,7 +421,8 @@ const ProjectDetails = ({ handleLogout }) => {
                 progress: 0,
                 type: "task",
                 open: false,
-                classification: classification
+                classification: classification,
+                priority: priority
             }, { withCredentials: true });
 
             const newTaskId = response.data.unique_id;
@@ -464,6 +439,7 @@ const ProjectDetails = ({ handleLogout }) => {
                 parent: 0,
                 progress: 0,
                 classification: classification,
+                priority: priority,
                 open: false,
                 created_at: new Date(),
                 created_by: "admin@example.com",
@@ -581,19 +557,21 @@ const ProjectDetails = ({ handleLogout }) => {
         }
     };
 
-    const handleDeleteTask = async () => {
+    const handleDeleteTask = async (taskId) => {
         try {
             loadingRef.current?.continuousStart();
             await apiCall.delete(DELETE_TASK_URL, {
                 data: {
-                    id: selectedTask.id,
+                    id: taskId,
                     project_id: projectId
                 },
                 withCredentials: true
             });
 
-            setTasks(prev => prev.filter(task => task.id !== selectedTask.id));
-            setSelectedTask(null);
+            setTasks(prev => prev.filter(task => task.id !== taskId));
+            if (selectedTask?.id === taskId) {
+                setSelectedTask(null);
+            }
             loadingRef.current?.complete();
         } catch (error) {
             console.error('Error deleting task:', error);
@@ -661,6 +639,12 @@ const ProjectDetails = ({ handleLogout }) => {
                 </ProjectDetailsContent>
             </ProjectDetailsContainer>
         );
+    }
+    function clearTaskText() {
+        apiRef.current.exec("update-task", {
+            id: "9a316ac2-cc67-4e7a-a77e-70220f55cb32",
+            task: { text: "" }
+        });
     }
 
 
@@ -767,8 +751,8 @@ const ProjectDetails = ({ handleLogout }) => {
                     <div style={ganttStyles}>
                         <Willow>
                             <Gantt
-                                apiRef={apiRef}
                                 init={(api) => (apiRef.current = api)}
+                                apiRef={apiRef}
                                 tasks={tasks}
                                 scales={scales}
                                 links={links}
@@ -780,7 +764,16 @@ const ProjectDetails = ({ handleLogout }) => {
                                 columns={columns}
                                 highlightTime={highlightTime}
                                 taskTypes={taskTypes}
-                                selected={[selectedTask?.id]}
+                                selected={selectedTask ? [selectedTask.id] : []}
+                                editorShape={[]}
+                                readonly={true}
+                                onSelectTask={(ev) => {
+                                    console.log("Selected task ID:", ev.id);
+                                    const task = tasks.find(t => t.id === ev.id);
+                                    if (task) {
+                                        setSelectedTask(task);
+                                    }
+                                }}
                             />
                         </Willow>
                     </div>
@@ -877,6 +870,23 @@ const ProjectDetails = ({ handleLogout }) => {
                             value={classification}
                             onChange={(e) => setClassification(e.target.value)}
                         />
+
+                        <Select
+                            margin="dense"
+                            label="Priority"
+                            fullWidth
+                            value={priority}
+                            onChange={(e) => setPriority(e.target.value)}
+                            displayEmpty
+                            sx={{ mt: 2 }}
+                        >
+                            <MenuItem value="">
+                                <em>Select Priority</em>
+                            </MenuItem>
+                            <MenuItem value="High">High</MenuItem>
+                            <MenuItem value="Medium">Medium</MenuItem>
+                            <MenuItem value="Low">Low</MenuItem>
+                        </Select>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={handleClose} variant="contained" color="error">

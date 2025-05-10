@@ -72,11 +72,6 @@ function App() {
             <ProjectDetails handleLogout={handleLogout} />
           </ProtectedRoute>
         } />
-        <Route path="/dashboard/project-details/" element={
-          <ProtectedRoute>
-            <ProjectDetails handleLogout={handleLogout} />
-          </ProtectedRoute>
-        } />
         <Route path="/dashboard/task-details" element={
           <ProtectedRoute>
             <TaskDetails handleLogout={handleLogout} />

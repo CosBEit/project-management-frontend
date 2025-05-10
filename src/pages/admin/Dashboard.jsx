@@ -503,7 +503,7 @@ const AdminDashboard = ({ handleLogout }) => {
 
   const handleRowClick = (event) => {
     if (!event.event.defaultPrevented) {
-      navigate(`/dashboard/project-details/?project-id=${event.data._id}`);
+      navigate(`/dashboard/project-details?project-id=${event.data._id}`);
     }
   };
 
