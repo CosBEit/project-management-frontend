@@ -395,7 +395,15 @@ const TaskDetails = ({ handleLogout }) => {
                                             </Avatar>
                                             <Typography variant="subtitle2">{comment.created_by}</Typography>
                                             <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                                {new Date(comment.created_at).toLocaleString()}
+                                                {new Date(comment.created_at + 'Z').toLocaleString(undefined, {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: true,
+                                                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                                })}
                                             </Typography>
                                         </Box>
                                         <Typography
