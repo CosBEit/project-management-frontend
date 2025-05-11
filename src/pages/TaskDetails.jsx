@@ -177,7 +177,7 @@ const TaskDetails = ({ handleLogout }) => {
     };
 
     const handleBack = () => {
-        navigate('/dashboard/projects');
+        navigate(-1);
     };
 
     const handleEdit = () => {

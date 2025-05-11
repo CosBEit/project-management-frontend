@@ -149,6 +149,7 @@ const ProjectDetails = ({ handleLogout }) => {
     const [textError, setTextError] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [saveDisabled, setSaveDisabled] = useState(true);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
 
     useEffect(() => {
@@ -301,7 +302,7 @@ const ProjectDetails = ({ handleLogout }) => {
     const fetchLinks = async () => {
         try {
             loadingRef.current?.continuousStart();
-            const response = await apiCall.get(GET_TASK_LINKS_URL + `?project_id=${projectId}`);
+            const response = await apiCall.get(GET_TASK_LINKS_URL + `/${projectId}`);
             setLinks(response.data.links);
             loadingRef.current?.complete();
         } catch (error) {
@@ -352,7 +353,7 @@ const ProjectDetails = ({ handleLogout }) => {
                         adjustedTask.end = new Date(new Date(adjustedTask.end).setDate(new Date(adjustedTask.end).getDate() + data.diff));
                     }
                 }
-                setDraggingTask({ "id": data.id, ...adjustedTask });
+                setSelectedTask({ "id": data.id, ...adjustedTask });
             });
 
             // Handle link creation
@@ -560,11 +561,7 @@ const ProjectDetails = ({ handleLogout }) => {
     const handleDeleteTask = async (taskId) => {
         try {
             loadingRef.current?.continuousStart();
-            await apiCall.delete(DELETE_TASK_URL, {
-                data: {
-                    id: taskId,
-                    project_id: projectId
-                },
+            await apiCall.delete(DELETE_TASK_URL + `/${taskId}` + `/${projectId}`, {
                 withCredentials: true
             });
 
@@ -629,6 +626,17 @@ const ProjectDetails = ({ handleLogout }) => {
         }
     };
 
+    const handleDeleteConfirm = () => {
+        if (selectedTask) {
+            handleDeleteTask(selectedTask.id);
+        }
+        setDeleteConfirmOpen(false);
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteConfirmOpen(false);
+    };
+
     if (isLoading) {
         return (
             <ProjectDetailsContainer>
@@ -640,13 +648,6 @@ const ProjectDetails = ({ handleLogout }) => {
             </ProjectDetailsContainer>
         );
     }
-    function clearTaskText() {
-        apiRef.current.exec("update-task", {
-            id: "9a316ac2-cc67-4e7a-a77e-70220f55cb32",
-            task: { text: "" }
-        });
-    }
-
 
     return (
         <ProjectDetailsContainer>
@@ -745,6 +746,25 @@ const ProjectDetails = ({ handleLogout }) => {
                                         navigate(`/dashboard/task-details?task-id=${selectedTask.id}&project-id=${projectId}`);
                                     }
                                 }}>Details</Button>
+                            <Button
+                                startIcon={<DeleteIcon />}
+                                variant='contained'
+                                style={{ fontWeight: 'bold', background: "red" }}
+                                sx={{
+                                    fontWeight: 'bold',
+                                    backgroundColor: 'red',
+                                    color: 'white',
+                                    fontSize: { xs: '0.75rem', sm: '1rem' },
+                                    minWidth: { xs: 'auto', sm: '64px' },
+                                    padding: { xs: '4px 8px', sm: '6px 16px' },
+                                    '&:disabled': {
+                                        backgroundColor: 'lightgray',
+                                        color: 'white',
+                                        opacity: 0.5,
+                                    },
+                                }}
+                                disabled={!selectedTask}
+                                onClick={() => setDeleteConfirmOpen(true)}>Delete</Button>
                         </div>
                     </div>
 
@@ -766,7 +786,7 @@ const ProjectDetails = ({ handleLogout }) => {
                                 taskTypes={taskTypes}
                                 selected={selectedTask ? [selectedTask.id] : []}
                                 editorShape={[]}
-                                readonly={true}
+                                // readonly={true}
                                 onSelectTask={(ev) => {
                                     console.log("Selected task ID:", ev.id);
                                     const task = tasks.find(t => t.id === ev.id);
@@ -989,6 +1009,38 @@ const ProjectDetails = ({ handleLogout }) => {
                         </Button>
                         <Button onClick={handleEditSave} variant="contained" color="success">
                             {isSaving ? <CircularProgress size={24} /> : "保存"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    open={deleteConfirmOpen}
+                    onClose={handleDeleteCancel}
+                >
+                    <DialogTitle style={{ fontWeight: 'bold' }}>
+                        タスクの削除確認
+                        <IconButton
+                            aria-label="close"
+                            onClick={handleDeleteCancel}
+                            style={{ position: 'absolute', right: 8, top: 8 }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent>
+                        <Typography>
+                            このタスクを削除してもよろしいですか？
+                        </Typography>
+                        <Typography color="error" style={{ marginTop: '10px' }}>
+                            注意: このタスクに関連するすべてのリンクも削除されます。
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleDeleteCancel} variant="contained" color="primary">
+                            キャンセル
+                        </Button>
+                        <Button onClick={handleDeleteConfirm} variant="contained" color="error">
+                            削除
                         </Button>
                     </DialogActions>
                 </Dialog>
