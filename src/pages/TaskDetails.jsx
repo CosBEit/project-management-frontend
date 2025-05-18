@@ -156,25 +156,6 @@ const TaskDetails = ({ handleLogout }) => {
         setHasChanges(checkForChanges());
     }, [taskDetails?.priority, selectedAssignee, taskDetails?.startDate, taskDetails?.endDate]);
 
-    const handleSaveChanges = async () => {
-        setIsSaving(true);
-        try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            setOriginalValues({
-                priority: taskDetails.priority,
-                assignee: selectedAssignee || taskDetails.assignee,
-                startDate: taskDetails.startDate,
-                endDate: taskDetails.endDate
-            });
-            setHasChanges(false);
-        } catch (error) {
-            console.error('Error saving changes:', error);
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     const handleBack = () => {
         navigate(-1);
@@ -187,21 +168,21 @@ const TaskDetails = ({ handleLogout }) => {
 
     const handleSave = async () => {
         setIsSaving(true);
+        console.log("taskDetails1",taskDetails);
         try {
             // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
             const response = await apiCall.put(UPDATE_TASK_URL, {
                 task_id: taskId,
                 task: {
                     task_description: editedDescription,
+                    priority: taskDetails.priority,
+                    assignee: selectedAssignee?.email || taskDetails.assignee,
+                    start: taskDetails.start,
+                    end: taskDetails.end
+
                 }
             }, { withCredentials: true });
             console.log(response.data);
-
-            setTaskDetails(prev => ({
-                ...prev,
-                task_description: editedDescription,
-            }));
             setIsEditing(false);
         } catch (error) {
             console.error('Error saving task:', error);
@@ -292,7 +273,7 @@ const TaskDetails = ({ handleLogout }) => {
                         </Typography>
                         <Button
                             variant="contained"
-                            onClick={handleSaveChanges}
+                            onClick={handleSave}
                             disabled={!hasChanges || isSaving}
                             startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />}
                         >
@@ -352,14 +333,13 @@ const TaskDetails = ({ handleLogout }) => {
                                     variant="body1"
                                     sx={{ whiteSpace: 'pre-wrap' }}
                                     dangerouslySetInnerHTML={{
-                                        __html: taskDetails.task_description?.includes('<') ?
-                                            taskDetails.task_description :
-                                            `<p>${taskDetails.task_description || 'No description provided.'}</p>`
+                                        __html: editedDescription || taskDetails.task_description
                                     }}
                                 />
                             )}
                         </StyledPaper>
-
+                        {console.log("taskDetails.task_description",taskDetails.task_description)}
+                        {console.log("editedDescription",editedDescription)}
                         <CommentSection>
                             <Typography variant="h6" gutterBottom>Comments</Typography>
                             <CommentInput>
@@ -394,7 +374,7 @@ const TaskDetails = ({ handleLogout }) => {
                                                 {comment.created_by.charAt(0).toUpperCase()}
                                             </Avatar>
                                             <Typography variant="subtitle2">{comment.created_by}</Typography>
-                                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}> 
                                                 {new Date(comment.created_at + 'Z').toLocaleString(undefined, {
                                                     year: 'numeric',
                                                     month: 'long',
@@ -475,7 +455,7 @@ const TaskDetails = ({ handleLogout }) => {
                                             if (typeof option === 'string') return option;
                                             return option.email || '';
                                         }}
-                                        value={taskDetails.assignee || activeUsers.find(user => user.email === taskDetails.assignee)}
+                                        value={selectedAssignee?.email || taskDetails.assignee}
                                         onChange={(_, newValue) => {
                                             setSelectedAssignee(newValue);
                                         }}
@@ -503,9 +483,10 @@ const TaskDetails = ({ handleLogout }) => {
                                         type="date"
                                         value={taskDetails.start}
                                         onChange={(e) => {
+                                            console.log("e.target.value",e.target.value);
                                             setTaskDetails(prev => ({
                                                 ...prev,
-                                                startDate: e.target.value
+                                                start: e.target.value
                                             }));
                                         }}
                                         fullWidth
@@ -521,7 +502,7 @@ const TaskDetails = ({ handleLogout }) => {
                                         onChange={(e) => {
                                             setTaskDetails(prev => ({
                                                 ...prev,
-                                                endDate: e.target.value
+                                                end: e.target.value
                                             }));
                                         }}
                                         fullWidth

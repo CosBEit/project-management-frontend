@@ -11,6 +11,7 @@ import {
   Button,
   ErrorMessage
 } from '../components/StyledComponents';
+import CircularProgress from '../components/CircularProgress';
 import { FORGOT_PASSWORD_URL } from '../config';
 
 const ForgotPasswordContainer = styled(Container)`
@@ -39,21 +40,21 @@ const ForgotPasswordCard = styled(Card)`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.xs};
+  gap: ${props => props.theme.spacing(1)};
 `;
 
 const Label = styled.label`
-  color: ${props => props.theme.colors.text};
-  font-size: ${props => props.theme.typography.body.fontSize};
+  color: ${props => props.theme.palette.text.primary};
+  font-size: ${props => props.theme.typography.body1.fontSize};
   font-weight: 500;
 `;
 
 const BackToLogin = styled(RouterLink)`
-  color: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.palette.primary.main};
   text-decoration: none;
-  font-size: ${props => props.theme.typography.body.fontSize};
+  font-size: ${props => props.theme.typography.body1.fontSize};
   text-align: center;
-  margin-top: ${props => props.theme.spacing.md};
+  margin-top: ${props => props.theme.spacing(2)};
   display: block;
 
   &:hover {
@@ -62,22 +63,24 @@ const BackToLogin = styled(RouterLink)`
 `;
 
 const SuccessMessage = styled.p`
-  color: ${props => props.theme.colors.success};
-  font-size: ${props => props.theme.typography.body.fontSize};
+  color: ${props => props.theme.palette.success.main};
+  font-size: ${props => props.theme.typography.body1.fontSize};
   text-align: center;
-  margin-top: ${props => props.theme.spacing.sm};
+  margin-top: ${props => props.theme.spacing(1)};
 `;
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   let navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
+    setIsSubmitting(true);
 
     console.log('Password reset requested for:', email);
     apiCall.post(FORGOT_PASSWORD_URL, { email }, {
@@ -90,12 +93,16 @@ const ForgotPassword = () => {
         navigate("/");
       }).catch(err => {
         console.log(err);
-        setError('Failed to send email. Please try again.');
+        if (err.response?.status === 404) {
+          setError('This account is not registered.');
+        } else if (err.response?.status === 429) {
+          setError('Too many requests. Please try again later.');
+        } else {
+          setError('Failed to send email. Please try again.');
+        }
       }).finally(() => {
-
+        setIsSubmitting(false);
       });
-
-
   };
 
   return (
@@ -122,8 +129,8 @@ const ForgotPassword = () => {
             </SuccessMessage>
           )}
 
-          <Button type="submit" onClick={handleSubmit}>
-            Send Reset Instructions
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? <CircularProgress size={24} /> : 'Send Reset Instructions'}
           </Button>
 
           <BackToLogin to="/">
