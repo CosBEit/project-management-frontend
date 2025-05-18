@@ -88,7 +88,7 @@ const Navbar = ({ handleLogout, title }) => {
         if (userRole === 'admin') {
             navigate('/dashboard/projects');
         } else {
-            navigate('/user/tasks');
+            navigate('/dashboard/tasks');
         }
     };
 
@@ -108,7 +108,7 @@ const Navbar = ({ handleLogout, title }) => {
                         <ListItemButton onClick={() => navigate(`/dashboard/users`)}>
                             <ListItemText primary="Users" />
                         </ListItemButton>
-                        <ListItemButton onClick={() => navigate('/user/tasks')}>
+                        <ListItemButton onClick={() => navigate('/dashboard/tasks')}>
                             <ListItemText primary="Admin Tasks" />
                         </ListItemButton>
                         <ListItemButton>
@@ -177,8 +177,8 @@ const Navbar = ({ handleLogout, title }) => {
                             Projects
                         </StyledMenuItem>
                         <StyledMenuItem
-                            onClick={() => navigate('/user/tasks')}
-                            active={location.pathname.includes("/user/tasks").toString()}
+                            onClick={() => navigate('/dashboard/tasks')}
+                            active={location.pathname.includes("/dashboard/tasks").toString()}
                             sx={{ display: { xs: 'none', sm: 'block' } }}
                         >
                             Admin Tasks

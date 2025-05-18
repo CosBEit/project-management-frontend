@@ -23,6 +23,7 @@ import { ADD_USER_URL, GET_USERS_URL, UPDATE_USER_URL } from '../../config';
 import format from 'date-fns/format';
 
 const UsersContainer = styled('div')(({ theme }) => ({
+    backgroundColor: 'aliceblue',
     width: '100%',
     height: '100vh',
 }));

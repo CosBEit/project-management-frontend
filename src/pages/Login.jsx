@@ -94,7 +94,11 @@ const Login = (props) => {
         props.setAuthenticated(true);
         dispatch(LoginEmailAction(res.data.email));
         dispatch(UserRoleAction(res.data.role));
-        navigate("/dashboard/projects");
+        if (res.data.role === "admin") {
+          navigate("/dashboard/projects");
+        } else {
+          navigate("/dashboard/tasks");
+        }
       }).catch(err => {
 
         console.log(err);

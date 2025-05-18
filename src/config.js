@@ -17,6 +17,7 @@ export const CREATE_TASK_URL = `/tasks`;
 export const GET_TASKS_URL = `/tasks`;
 export const GET_TASK_URL = '/tasks';
 export const UPDATE_TASK_URL = '/tasks';
+export const UPDATE_TASK_STATUS_URL = '/tasks/update-status';
 export const UPDATE_TASK_DATES_URL = `/tasks/update-dates`;
 export const DELETE_TASK_URL = `/tasks`;
 export const CREATE_TASK_LINKS_URL = `/tasks/links`;

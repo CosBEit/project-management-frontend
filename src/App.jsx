@@ -18,6 +18,8 @@ import ProjectDetails from './pages/admin/ProjectDetails';
 import UsersList from './pages/admin/UsersList';
 import CreateAccount from './pages/CreateAccount';
 import TaskDetails from './pages/TaskDetails';
+import TasksList from './pages/TasksList';
+import TaskExecution from './pages/TaskExecution';
 function App() {
   const navigate = useNavigate();
   const [authenticated, setAuthenticated] = useState(!!decodeCookie());
@@ -48,7 +50,7 @@ function App() {
             userRole === 'admin' ? (
               <Navigate to="/dashboard/projects" />
             ) : (
-              <Navigate to="/tasks" />
+              <Navigate to="/dashboard/tasks" />
             )
           ) : (
             <Login setAuthenticated={setAuthenticated} />
@@ -75,6 +77,16 @@ function App() {
         <Route path="/dashboard/task-details" element={
           <ProtectedRoute>
             <TaskDetails handleLogout={handleLogout} />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard/tasks" element={
+          <ProtectedRoute>
+            <TasksList handleLogout={handleLogout} />
+          </ProtectedRoute>
+        } />
+        <Route path="/task-execution" element={
+          <ProtectedRoute>
+            <TaskExecution handleLogout={handleLogout} />
           </ProtectedRoute>
         } />
       </Routes>
